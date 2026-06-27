@@ -82,6 +82,22 @@
       margin-bottom: 6px;
     }
 
+    kbd {
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 3px;
+      box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+      color: #334155;
+      display: inline-block;
+      font-family: inherit;
+      font-size: 0.8em;
+      font-weight: 600;
+      line-height: 1.2;
+      padding: 1px 4px;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
     .tag-input-row {
       display: flex;
       gap: 8px;
@@ -211,11 +227,15 @@
 
   <h1>Starlight Voice Classifier</h1>
   <p class="intro">
-    Help classify TTS voices for Space Station 14. You'll see one random unclassified voice at a time.
-    Select its pitch and any applicable tags, then hit <strong>Submit &amp; Next</strong> (or press
-    <strong>Enter</strong>).
-    Skip if you don't recognise it.
+    Help classify TTS voices for my proposed filtering feature on Starlight server. You'll see one random unclassified voice at a time:
   </p>
+  <ol style="margin-left: 20px; margin-bottom: 16px; font-size: 0.95em; color: #444; line-height: 1.5;">
+    <li>Launch the game and open the character customization editor.</li>
+    <li>Click "Select Voice" and locate the voice name displayed below.</li>
+    <li>Listen to the voice by clicking "Request Voice Preview" in-game.</li>
+    <li>Select its pitch and any relevant tags in this web tool.</li>
+    <li>Click <strong>Submit &amp; Next</strong> (or press <kbd>Enter</kbd>) to save. Hit <strong>Skip</strong> if you cannot find or hear the voice.</li>
+  </ol>
 
   <div id="statusBar">Loading…</div>
 
@@ -228,9 +248,9 @@
 
     <div class="field">
       <label for="pitchSelect">Pitch <span class="custom-section-label"
-          style="display:inline; font-weight:normal; margin-left:8px;">(Hotkeys: 1/2/3, 0 to clear)</span></label>
+          style="display:inline; font-weight:normal; margin-left:8px;">(Hotkeys: <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd>, <kbd>0</kbd> to clear)</span></label>
       <select id="pitchSelect">
-        <option value="">— Unspecified —</option>
+        <option value="">- Unspecified -</option>
         <option value="Low">Low</option>
         <option value="Medium">Medium</option>
         <option value="High">High</option>
@@ -256,13 +276,17 @@
     <div id="submitStatus"></div>
 
     <div class="actions">
-      <button type="button" id="submitBtn" onclick="submitClassification()">Submit &amp; Next</button>
+      <button type="button" id="submitBtn" onclick="submitClassification()">Submit &amp; Next (<kbd>Enter</kbd>)</button>
       <button type="button" onclick="skipVoice()">Skip</button>
     </div>
   </div>
 
   <div class="session-log">
-    <h3>This session: <span id="sessionCount">0</span> submitted</h3>
+    <h3>
+      This session: <span id="sessionCount">0</span> submitted | 
+      Community: <span id="communityCount">0</span> total 
+      (<span id="coveragePct">0%</span> coverage)
+    </h3>
     <ul id="sessionLog"></ul>
   </div>
 
@@ -275,12 +299,14 @@
     const PRESET_TAGS = {
       tone: ["booming", "breathy", "clear", "harsh", "muffled", "nasal", "raspy", "smooth", "soft"],
       attitude: ["monstrous", "robotic", "serious", "silly"],
-      accent: ["american", "asian", "australian", "british", "european", "russian"]
+      accent: ["american", "asian", "australian", "british", "european", "french", "russian"]
     };
 
     const FLAT_PRESET_TAGS = Object.values(PRESET_TAGS).flat();
 
     const VOICES = [{ "id": "ICASSP166", "name": "Adelaide", "sex": "Female", "silicon": false }, { "id": "ICASSP39", "name": "Adrian", "sex": "Male", "silicon": false }, { "id": "ICASSP134", "name": "Agnes", "sex": "Male", "silicon": false }, { "id": "ICASSP118", "name": "Alden", "sex": "Male", "silicon": false }, { "id": "ICASSP93", "name": "Alice", "sex": "Female", "silicon": false }, { "id": "ICASSP159", "name": "Ambrose", "sex": "Male", "silicon": false }, { "id": "angryJowels", "name": "AngryJowels", "sex": "Male", "silicon": false }, { "id": "antiri", "name": "Antiri", "sex": "Female", "silicon": false }, { "id": "apokalypsis", "name": "Apokalypsis", "sex": "Male", "silicon": false }, { "id": "mozillaAu25", "name": "Arabella", "sex": "Female", "silicon": false }, { "id": "arborfield", "name": "Arborfield", "sex": "Female", "silicon": false }, { "id": "ICASSP158", "name": "Archibald", "sex": "Male", "silicon": false }, { "id": "ICASSP123", "name": "Audrey", "sex": "Male", "silicon": false }, { "id": "ICASSP29", "name": "Aurora", "sex": "Female", "silicon": false }, { "id": "australium", "name": "Australium", "sex": "Male", "silicon": false }, { "id": "ICASSP110", "name": "Autumn", "sex": "Male", "silicon": false }, { "id": "ICASSP57", "name": "Avery", "sex": "Unsexed", "silicon": false }, { "id": "ICASSP157", "name": "Bailey", "sex": "Male", "silicon": false }, { "id": "ICASSP152", "name": "Bartholomew", "sex": "Male", "silicon": false }, { "id": "ICASSP135", "name": "Beatrice", "sex": "Female", "silicon": false }, { "id": "ICASSP109", "name": "Bennett", "sex": "Male", "silicon": false }, { "id": "ICASSP147", "name": "Bernard", "sex": "Female", "silicon": false }, { "id": "blastergranny", "name": "Blaster Granny", "sex": "Female", "silicon": false }, { "id": "boonies", "name": "Boonies", "sex": "Male", "silicon": false }, { "id": "bored", "name": "Bored", "sex": "Male", "silicon": false }, { "id": "bostonish", "name": "Bostonish", "sex": "Male", "silicon": false }, { "id": "botboy", "name": "Bot-Boy", "sex": "Male", "silicon": true }, { "id": "bozoschlomo", "name": "Bozo Schlomo", "sex": "Male", "silicon": false }, { "id": "mozillaAu4", "name": "Brandon", "sex": "Male", "silicon": false }, { "id": "borgMozillaAu30", "name": "Brenda", "sex": "Female", "silicon": true }, { "id": "bridget", "name": "Bridget", "sex": "Female", "silicon": false }, { "id": "ICASSP146", "name": "Brigitte", "sex": "Female", "silicon": false }, { "id": "ICASSP82", "name": "Bruce", "sex": "Male", "silicon": false }, { "id": "bugs", "name": "Bugs", "sex": "Male", "silicon": false }, { "id": "butler", "name": "Butler", "sex": "Male", "silicon": false }, { "id": "chip", "name": "CHiP", "sex": "Unsexed", "silicon": true }, { "id": "ICASSP55", "name": "Caleb", "sex": "Male", "silicon": false }, { "id": "calmAutomated", "name": "CalmAutomated", "sex": "Male", "silicon": true }, { "id": "ICASSP137", "name": "Camille", "sex": "Female", "silicon": false }, { "id": "ICASSP100", "name": "Carl", "sex": "Female", "silicon": false }, { "id": "ICASSP56", "name": "Casey", "sex": "Unsexed", "silicon": false }, { "id": "ICASSP187", "name": "Cassandra", "sex": "Female", "silicon": false }, { "id": "caveJ", "name": "CaveJ", "sex": "Male", "silicon": false }, { "id": "ICASSP111", "name": "Cedric", "sex": "Male", "silicon": false }, { "id": "slr3", "name": "Celeste", "sex": "Female", "silicon": false }, { "id": "ICASSP103", "name": "Celinda", "sex": "Female", "silicon": false }, { "id": "chadkegger", "name": "Chad Kegger", "sex": "Male", "silicon": false }, { "id": "chandraki", "name": "Chandraki", "sex": "Female", "silicon": false }, { "id": "ICASSP87", "name": "Chloe", "sex": "Male", "silicon": false }, { "id": "mozillaAu15", "name": "Christine", "sex": "Female", "silicon": false }, { "id": "ICASSP40", "name": "Clara", "sex": "Female", "silicon": false }, { "id": "ICASSP186", "name": "Clementine", "sex": "Female", "silicon": false }, { "id": "ICASSP73", "name": "Clifford", "sex": "Male", "silicon": false }, { "id": "ICASSP115", "name": "Clifton", "sex": "Male", "silicon": false }, { "id": "clownish", "name": "Clownish", "sex": "Male", "silicon": false }, { "id": "cockney", "name": "Cockney", "sex": "Male", "silicon": false }, { "id": "ICASSP105", "name": "Colin", "sex": "Unsexed", "silicon": false }, { "id": "colorfingert", "name": "Colorfinger", "sex": "Male", "silicon": false }, { "id": "borgColorfingert", "name": "Colorfinger", "sex": "Unsexed", "silicon": true }, { "id": "concerned", "name": "Concerned", "sex": "Male", "silicon": false }, { "id": "concerning", "name": "Concerning", "sex": "Male", "silicon": false }, { "id": "ICASSP60", "name": "Connor", "sex": "Male", "silicon": false }, { "id": "ICASSP138", "name": "Constance", "sex": "Female", "silicon": false }, { "id": "ICASSP156", "name": "Cordelia", "sex": "Female", "silicon": false }, { "id": "ICASSP161", "name": "Cornelius", "sex": "Male", "silicon": false }, { "id": "coulros", "name": "Coulros", "sex": "Male", "silicon": false }, { "id": "ICASSP168", "name": "Crawford", "sex": "Male", "silicon": false }, { "id": "croakiecaw", "name": "Croakie Caw", "sex": "Female", "silicon": false }, { "id": "ICASSP177", "name": "Cromwell", "sex": "Male", "silicon": false }, { "id": "crystalina", "name": "Crystalina", "sex": "Female", "silicon": false }, { "id": "cybe", "name": "Cybe", "sex": "Male", "silicon": false }, { "id": "daffy", "name": "Daffy", "sex": "Male", "silicon": false }, { "id": "ICASSP41", "name": "Damien", "sex": "Male", "silicon": false }, { "id": "ICASSP106", "name": "Daphne", "sex": "Female", "silicon": false }, { "id": "darkDramatic", "name": "DarkDramatic", "sex": "Male", "silicon": false }, { "id": "darkish", "name": "Darkish", "sex": "Male", "silicon": false }, { "id": "deepQuiet", "name": "DeepQuiet", "sex": "Male", "silicon": false }, { "id": "mozillaAu3", "name": "Derek", "sex": "Male", "silicon": false }, { "id": "ICASSP67", "name": "Derrick", "sex": "Male", "silicon": false }, { "id": "detectivegrowler", "name": "Detective Growler", "sex": "Male", "silicon": false }, { "id": "ICASSP120", "name": "Diana", "sex": "Male", "silicon": false }, { "id": "distant", "name": "Distant", "sex": "Male", "silicon": false }, { "id": "dodger", "name": "Dodger", "sex": "Male", "silicon": false }, { "id": "mozillaAu17", "name": "Dominic", "sex": "Male", "silicon": false }, { "id": "doomed", "name": "Doomed", "sex": "Male", "silicon": false }, { "id": "ICASSP127", "name": "Doris", "sex": "Male", "silicon": false }, { "id": "ICASSP183", "name": "Dorothea", "sex": "Female", "silicon": false }, { "id": "dorri", "name": "Dorri", "sex": "Male", "silicon": false }, { "id": "mozillaAu13", "name": "Douglas", "sex": "Male", "silicon": false }, { "id": "downUnder", "name": "DownUnder", "sex": "Male", "silicon": false }, { "id": "dracula", "name": "Dracula", "sex": "Male", "silicon": false }, { "id": "ICASSP59", "name": "Dylan", "sex": "Male", "silicon": false }, { "id": "ICASSP113", "name": "Earl", "sex": "Male", "silicon": false }, { "id": "ICASSP131", "name": "Edith", "sex": "Unsexed", "silicon": false }, { "id": "ICASSP140", "name": "Edmund", "sex": "Male", "silicon": false }, { "id": "ICASSP126", "name": "Edwin", "sex": "Female", "silicon": false }, { "id": "ICASSP169", "name": "Eleanora", "sex": "Female", "silicon": false }, { "id": "ICASSP104", "name": "Elena", "sex": "Unsexed", "silicon": false }, { "id": "ICASSP179", "name": "Emerson", "sex": "Male", "silicon": false }, { "id": "ICASSP94", "name": "Emery", "sex": "Unsexed", "silicon": false }, { "id": "ICASSP77", "name": "Esther", "sex": "Female", "silicon": false }, { "id": "ICASSP42", "name": "Ethan", "sex": "Male", "silicon": false }, { "id": "ICASSP173", "name": "Evangeline", "sex": "Female", "silicon": false }, { "id": "excitable", "name": "Excitable", "sex": "Male", "silicon": false }, { "id": "fartley", "name": "Fartley", "sex": "Male", "silicon": false }, { "id": "felinoid", "name": "Felinoid", "sex": "Unsexed", "silicon": false }, { "id": "ICASSP36", "name": "Felix", "sex": "Male", "silicon": false }, { "id": "fidget", "name": "Fidget", "sex": "Female", "silicon": false }, { "id": "ICASSP74", "name": "Finley", "sex": "Unsexed", "silicon": false }, { "id": "ICASSP79", "name": "Fiona", "sex": "Male", "silicon": false }, { "id": "ICASSP114", "name": "Floyd", "sex": "Male", "silicon": false }, { "id": "forceful", "name": "Forceful", "sex": "Male", "silicon": false }, { "id": "ICASSP190", "name": "Francesca", "sex": "Female", "silicon": false }, { "id": "ICASSP122", "name": "Franklin", "sex": "Male", "silicon": false }, { "id": "ICASSP162", "name": "Frederick", "sex": "Male", "silicon": false }, { "id": "gangerunt", "name": "Ganger Unt", "sex": "Male", "silicon": false }, { "id": "ICASSP65", "name": "Garrett", "sex": "Male", "silicon": false }, { "id": "mozillaAu20", "name": "Genevieve", "sex": "Male", "silicon": false }, { "id": "gisele", "name": "Gisele", "sex": "Female", "silicon": false }, { "id": "ICASSP132", "name": "Gladys", "sex": "Female", "silicon": false }, { "id": "ICASSP125", "name": "Gloria", "sex": "Female", "silicon": false }, { "id": "goblin", "name": "Goblin", "sex": "Male", "silicon": false }, { "id": "goughman", "name": "Goughman", "sex": "Male", "silicon": false }, { "id": "governess", "name": "Governess", "sex": "Female", "silicon": false }, { "id": "ICASSP66", "name": "Grant", "sex": "Female", "silicon": false }, { "id": "gravely", "name": "Gravely", "sex": "Male", "silicon": false }, { "id": "mozillaAu7", "name": "Gregory", "sex": "Male", "silicon": false }, { "id": "ICASSP81", "name": "Greta", "sex": "Female", "silicon": false }, { "id": "ICASSP175", "name": "Gwendolyn", "sex": "Female", "silicon": false }, { "id": "harrier", "name": "Harrier", "sex": "Male", "silicon": false }, { "id": "ICASSP148", "name": "Harriet", "sex": "Male", "silicon": false }, { "id": "mozillaAu18", "name": "Harrison", "sex": "Male", "silicon": false }, { "id": "haughty", "name": "Haughty", "sex": "Male", "silicon": false }, { "id": "ICASSP58", "name": "Hazel", "sex": "Female", "silicon": false }, { "id": "ICASSP182", "name": "Hendricks", "sex": "Male", "silicon": false }, { "id": "ICASSP176", "name": "Henrietta", "sex": "Female", "silicon": false }, { "id": "hotmess", "name": "Hot Mess", "sex": "Female", "silicon": false }, { "id": "ICASSP97", "name": "Hugh", "sex": "Female", "silicon": false }, { "id": "igon", "name": "Igon", "sex": "Male", "silicon": false }, { "id": "impastalady", "name": "Impasta Lady", "sex": "Female", "silicon": false }, { "id": "ioannissouvlakis", "name": "Ioannis Souvlakis", "sex": "Male", "silicon": false }, { "id": "ICASSP49", "name": "Iris", "sex": "Female", "silicon": false }, { "id": "ICASSP117", "name": "Irving", "sex": "Male", "silicon": false }, { "id": "mozillaAu23", "name": "Isadora", "sex": "Female", "silicon": false }, { "id": "ivanheadrev", "name": "Ivan Headrev", "sex": "Male", "silicon": false }, { "id": "ICASSP35", "name": "Ivy", "sex": "Female", "silicon": false }, { "id": "johnborgman", "name": "JOHN BORGMAN", "sex": "Male", "silicon": true }, { "id": "ICASSP98", "name": "Jamie", "sex": "Unsexed", "silicon": false }, { "id": "janetrauma", "name": "Jane Trauma", "sex": "Female", "silicon": false }, { "id": "jarana", "name": "Jarana", "sex": "Female", "silicon": false }, { "id": "ICASSP33", "name": "Jasper", "sex": "Male", "silicon": false }, { "id": "mozillaAu19", "name": "Jefferson", "sex": "Male", "silicon": false }, { "id": "jimmynanotrasen", "name": "Jimmy NanoTrasen", "sex": "Male", "silicon": false }, { "id": "jittery", "name": "Jittery", "sex": "Male", "silicon": false }, { "id": "johnnanotrasen", "name": "John NanoTrasen", "sex": "Male", "silicon": false }, { "id": "johnson", "name": "Johnson", "sex": "Male", "silicon": true }, { "id": "ICASSP61", "name": "Jordan", "sex": "Unsexed", "silicon": false }, { "id": "ICASSP163", "name": "Josephine", "sex": "Male", "silicon": false }, { "id": "jowels", "name": "Jowels", "sex": "Male", "silicon": false }, { "id": "kaeltharion", "name": "Kaeltharion", "sex": "Male", "silicon": false }, { "id": "karma", "name": "Karma", "sex": "Female", "silicon": false }, { "id": "kassssandra", "name": "Kassssandra", "sex": "Female", "silicon": false }, { "id": "kaur", "name": "Kaur", "sex": "Female", "silicon": false }, { "id": "ICASSP68", "name": "Keith", "sex": "Male", "silicon": false }, { "id": "ICASSP133", "name": "Kendall", "sex": "Unsexed", "silicon": false }, { "id": "mozillaAu12", "name": "Kenneth", "sex": "Male", "silicon": false }, { "id": "kind", "name": "Kind", "sex": "Male", "silicon": false }, { "id": "kusochan", "name": "Kuso-chan", "sex": "Female", "silicon": false }, { "id": "kusohime", "name": "Kuso-hime", "sex": "Female", "silicon": false }, { "id": "ladykommandant", "name": "Lady Kommandant", "sex": "Female", "silicon": false }, { "id": "ICASSP76", "name": "Lance", "sex": "Male", "silicon": false }, { "id": "ICASSP101", "name": "Lawrence", "sex": "Male", "silicon": false }, { "id": "ledavid", "name": "Le David", "sex": "Male", "silicon": false }, { "id": "ICASSP47", "name": "Leo", "sex": "Male", "silicon": false }, { "id": "ICASSP155", "name": "Leopold", "sex": "Male", "silicon": false }, { "id": "mozillaAu11", "name": "Lillian", "sex": "Female", "silicon": false }, { "id": "ICASSP96", "name": "Lilliana", "sex": "Female", "silicon": false }, { "id": "lizardish", "name": "Lizardish", "sex": "Male", "silicon": false }, { "id": "ICASSP128", "name": "Lorraine", "sex": "Female", "silicon": false }, { "id": "ICASSP48", "name": "Luna", "sex": "Female", "silicon": false }, { "id": "ICASSP90", "name": "Lydia", "sex": "Female", "silicon": false }, { "id": "maxcap", "name": "MAX-CAP", "sex": "Female", "silicon": true }, { "id": "ICASSP129", "name": "Mabel", "sex": "Female", "silicon": false }, { "id": "macho", "name": "Macho", "sex": "Male", "silicon": false }, { "id": "madDoctor", "name": "MadDoctor", "sex": "Male", "silicon": false }, { "id": "madamtophat", "name": "Madam Tophat", "sex": "Female", "silicon": false }, { "id": "ICASSP99", "name": "Malcolm", "sex": "Male", "silicon": false }, { "id": "marcaisse", "name": "Marcaisse", "sex": "Male", "silicon": false }, { "id": "mozillaAu1", "name": "Marcus", "sex": "Male", "silicon": false }, { "id": "ICASSP71", "name": "Marcus", "sex": "Unsexed", "silicon": false }, { "id": "borgMozillaAu1", "name": "Marcus", "sex": "Unsexed", "silicon": true }, { "id": "ICASSP181", "name": "Marjorie", "sex": "Female", "silicon": false }, { "id": "ICASSP75", "name": "Marshall", "sex": "Male", "silicon": false }, { "id": "maryjane", "name": "Mary Jane", "sex": "Female", "silicon": false }, { "id": "ICASSP160", "name": "Mathilda", "sex": "Female", "silicon": false }, { "id": "ICASSP32", "name": "Maxwell", "sex": "Male", "silicon": false }, { "id": "meek", "name": "Meek", "sex": "Male", "silicon": false }, { "id": "ICASSP143", "name": "Millicent", "sex": "Female", "silicon": false }, { "id": "slr4", "name": "Miranda", "sex": "Female", "silicon": false }, { "id": "ICASSP116", "name": "Miriam", "sex": "Female", "silicon": false }, { "id": "miriam", "name": "Miriam", "sex": "Female", "silicon": false }, { "id": "mole", "name": "Mole", "sex": "Male", "silicon": false }, { "id": "borgMozillaAu31", "name": "Mollie", "sex": "Female", "silicon": true }, { "id": "monster", "name": "Monster", "sex": "Male", "silicon": false }, { "id": "monstrous", "name": "Monstrous", "sex": "Male", "silicon": false }, { "id": "monstrous2", "name": "Monstrous2", "sex": "Male", "silicon": false }, { "id": "ICASSP153", "name": "Montgomery", "sex": "Male", "silicon": false }, { "id": "ICASSP34", "name": "Morgan", "sex": "Unsexed", "silicon": false }, { "id": "ICASSP89", "name": "Naomi", "sex": "Male", "silicon": false }, { "id": "nasaly", "name": "Nasaly", "sex": "Male", "silicon": false }, { "id": "mozillaAu6", "name": "Natalie", "sex": "Female", "silicon": false }, { "id": "ICASSP52", "name": "Nathan", "sex": "Male", "silicon": false }, { "id": "nevec", "name": "Nevec", "sex": "Male", "silicon": false }, { "id": "ICASSP141", "name": "Nigel", "sex": "Male", "silicon": false }, { "id": "ICASSP85", "name": "Nolan", "sex": "Male", "silicon": false }, { "id": "nurgle", "name": "Nurgle", "sex": "Male", "silicon": false }, { "id": "mozillaAu26", "name": "Octavia", "sex": "Female", "silicon": false }, { "id": "ogre", "name": "Ogre", "sex": "Unsexed", "silicon": false }, { "id": "ICASSP70", "name": "Olive", "sex": "Female", "silicon": false }, { "id": "operativejumpskirt", "name": "Operative Jumpskirt", "sex": "Female", "silicon": false }, { "id": "ICASSP188", "name": "Orwell", "sex": "Male", "silicon": false }, { "id": "ICASSP38", "name": "Oscar", "sex": "Male", "silicon": false }, { "id": "ICASSP139", "name": "Oswald", "sex": "Male", "silicon": false }, { "id": "ICASSP102", "name": "Parker", "sex": "Unsexed", "silicon": false }, { "id": "mozillaAu8", "name": "Patrick", "sex": "Male", "silicon": false }, { "id": "ICASSP80", "name": "Pearl", "sex": "Male", "silicon": false }, { "id": "ICASSP144", "name": "Penelope", "sex": "Male", "silicon": false }, { "id": "ICASSP154", "name": "Percival", "sex": "Male", "silicon": false }, { "id": "ICASSP151", "name": "Phoenix", "sex": "Male", "silicon": false }, { "id": "piksqu", "name": "Pik", "sex": "Male", "silicon": false }, { "id": "polito", "name": "Polito", "sex": "Female", "silicon": true }, { "id": "powerArmor", "name": "PowerArmor", "sex": "Male", "silicon": false }, { "id": "powerful", "name": "Powerful", "sex": "Male", "silicon": false }, { "id": "powerful2", "name": "Powerful2", "sex": "Male", "silicon": false }, { "id": "powerhouse", "name": "Powerhouse", "sex": "Male", "silicon": false }, { "id": "ICASSP172", "name": "Preston", "sex": "Male", "silicon": false }, { "id": "ICASSP170", "name": "Priscilla", "sex": "Female", "silicon": false }, { "id": "protagonistic", "name": "Protagonistic", "sex": "Male", "silicon": false }, { "id": "pterry", "name": "Pterry", "sex": "Male", "silicon": false }, { "id": "quiet", "name": "Quiet", "sex": "Male", "silicon": false }, { "id": "ICASSP51", "name": "Quinn", "sex": "Unsexed", "silicon": false }, { "id": "ICASSP191", "name": "Randolph", "sex": "Male", "silicon": false }, { "id": "mozillaAu9", "name": "Raymond", "sex": "Male", "silicon": false }, { "id": "readingNebie", "name": "Reading", "sex": "Female", "silicon": false }, { "id": "mozillaAu14", "name": "Rebecca", "sex": "Female", "silicon": false }, { "id": "ICASSP150", "name": "Reginald", "sex": "Female", "silicon": false }, { "id": "rich", "name": "Rich", "sex": "Male", "silicon": false }, { "id": "ICASSP30", "name": "River", "sex": "Unsexed", "silicon": false }, { "id": "ICASSP95", "name": "River", "sex": "Unsexed", "silicon": false }, { "id": "ICASSP83", "name": "Robin", "sex": "Unsexed", "silicon": false }, { "id": "rockman", "name": "Rockman", "sex": "Male", "silicon": false }, { "id": "ICASSP107", "name": "Roderick", "sex": "Male", "silicon": false }, { "id": "ICASSP88", "name": "Roland", "sex": "Male", "silicon": false }, { "id": "roper", "name": "Roper", "sex": "Male", "silicon": false }, { "id": "ICASSP72", "name": "Rosalie", "sex": "Female", "silicon": false }, { "id": "slr2", "name": "Rosalind", "sex": "Female", "silicon": false }, { "id": "ICASSP149", "name": "Rosalinda", "sex": "Female", "silicon": false }, { "id": "ICASSP165", "name": "Rosemary", "sex": "Male", "silicon": false }, { "id": "borgMozillaAu29", "name": "Rosie", "sex": "Female", "silicon": true }, { "id": "ICASSP69", "name": "Rowan", "sex": "Male", "silicon": false }, { "id": "ICASSP64", "name": "Ruby", "sex": "Male", "silicon": false }, { "id": "ICASSP142", "name": "Rupert", "sex": "Male", "silicon": false }, { "id": "rye", "name": "Rye", "sex": "Male", "silicon": false }, { "id": "sarahborg", "name": "SARAH", "sex": "Female", "silicon": true }, { "id": "sad", "name": "Sad", "sex": "Male", "silicon": false }, { "id": "ICASSP31", "name": "Sage", "sex": "Unsexed", "silicon": false }, { "id": "ICASSP84", "name": "Sage", "sex": "Unsexed", "silicon": false }, { "id": "salome", "name": "Salome", "sex": "Female", "silicon": false }, { "id": "sarcastica", "name": "Sarcastica", "sex": "Female", "silicon": false }, { "id": "ICASSP45", "name": "Scarlett", "sex": "Female", "silicon": false }, { "id": "scottish", "name": "Scottish", "sex": "Male", "silicon": false }, { "id": "scottishish", "name": "Scottishish", "sex": "Male", "silicon": false }, { "id": "ICASSP53", "name": "Sebastian", "sex": "Male", "silicon": false }, { "id": "ICASSP189", "name": "Seraphina", "sex": "Female", "silicon": false }, { "id": "serious", "name": "Serious", "sex": "Male", "silicon": false }, { "id": "shahrazad", "name": "Shahrazad", "sex": "Female", "silicon": false }, { "id": "ICASSP86", "name": "Shane", "sex": "Male", "silicon": false }, { "id": "silicon", "name": "Silicon", "sex": "Male", "silicon": true }, { "id": "ICASSP163dot5", "name": "Sinclair", "sex": "Male", "silicon": false }, { "id": "skeletor", "name": "Skeletor", "sex": "Male", "silicon": false }, { "id": "slopbad", "name": "Slopbad", "sex": "Male", "silicon": false }, { "id": "smooth", "name": "Smooth", "sex": "Male", "silicon": false }, { "id": "smoothLoud", "name": "SmoothLoud", "sex": "Male", "silicon": false }, { "id": "snake", "name": "Snake", "sex": "Male", "silicon": false }, { "id": "snakeU", "name": "Snake", "sex": "Unsexed", "silicon": false }, { "id": "snorri", "name": "Snorri", "sex": "Male", "silicon": false }, { "id": "softspokenNebie", "name": "Softspoken", "sex": "Female", "silicon": false }, { "id": "solidFake", "name": "SolidFake", "sex": "Male", "silicon": false }, { "id": "mozillaAu10", "name": "Sophia", "sex": "Female", "silicon": false }, { "id": "spaceempress", "name": "Space Empress", "sex": "Female", "silicon": false }, { "id": "speekinspel", "name": "Speekinspel", "sex": "Male", "silicon": true }, { "id": "ICASSP91", "name": "Spencer", "sex": "Male", "silicon": false }, { "id": "starlingNebie", "name": "Starling", "sex": "Female", "silicon": false }, { "id": "steele", "name": "Steele", "sex": "Female", "silicon": false }, { "id": "ICASSP63", "name": "Stella", "sex": "Male", "silicon": false }, { "id": "ICASSP171", "name": "Sterling", "sex": "Male", "silicon": false }, { "id": "strahdVonZarovich", "name": "StrahdVonZarovich", "sex": "Male", "silicon": false }, { "id": "ICASSP108", "name": "Stuart", "sex": "Male", "silicon": false }, { "id": "stuffedUp", "name": "StuffedUp", "sex": "Male", "silicon": false }, { "id": "sujeong", "name": "Sujeong", "sex": "Female", "silicon": false }, { "id": "ICASSP192", "name": "Sullivan", "sex": "Male", "silicon": false }, { "id": "borgTalkBox", "name": "Talk-Box", "sex": "Unsexed", "silicon": true }, { "id": "tazmanianDevil", "name": "TazmanianDevil", "sex": "Male", "silicon": false }, { "id": "ICASSP112", "name": "Tessa", "sex": "Male", "silicon": false }, { "id": "thalia", "name": "Thalia", "sex": "Female", "silicon": false }, { "id": "theBrain", "name": "TheBrain", "sex": "Male", "silicon": false }, { "id": "mozillaAu27", "name": "Theodora", "sex": "Female", "silicon": false }, { "id": "slr1", "name": "Theodore", "sex": "Male", "silicon": false }, { "id": "thornNebie", "name": "Thorn", "sex": "Female", "silicon": false }, { "id": "mozillaAu21", "name": "Thornberry", "sex": "Male", "silicon": false }, { "id": "ICASSP164", "name": "Thornton", "sex": "Male", "silicon": false }, { "id": "tipsymcgee", "name": "Tipsy McGee", "sex": "Female", "silicon": false }, { "id": "trashbot", "name": "Trashbot", "sex": "Female", "silicon": true }, { "id": "ICASSP78", "name": "Troy", "sex": "Male", "silicon": false }, { "id": "ICASSP54", "name": "Tyler", "sex": "Male", "silicon": false }, { "id": "mozillaAu22", "name": "Underwood", "sex": "Male", "silicon": false }, { "id": "usagichan", "name": "Usagi-chan", "sex": "Female", "silicon": false }, { "id": "usagitan", "name": "Usagi-tan", "sex": "Female", "silicon": false }, { "id": "valaya", "name": "Valaya", "sex": "Female", "silicon": false }, { "id": "mozillaAu24", "name": "Valentina", "sex": "Female", "silicon": false }, { "id": "valleyNebie", "name": "Valley", "sex": "Female", "silicon": false }, { "id": "mozillaAu16", "name": "Vanessa", "sex": "Female", "silicon": false }, { "id": "ICASSP130", "name": "Vernon", "sex": "Male", "silicon": false }, { "id": "ICASSP185", "name": "Veronica", "sex": "Female", "silicon": false }, { "id": "ICASSP46", "name": "Victor", "sex": "Male", "silicon": false }, { "id": "vikaPvi", "name": "Vika Pvi", "sex": "Female", "silicon": false }, { "id": "mozillaAu2", "name": "Vincent", "sex": "Male", "silicon": false }, { "id": "borgMozillaAu2", "name": "Vincent", "sex": "Unsexed", "silicon": true }, { "id": "ICASSP37", "name": "Violet", "sex": "Female", "silicon": false }, { "id": "ICASSP121", "name": "Vivian", "sex": "Female", "silicon": false }, { "id": "vocoder", "name": "VoCoder", "sex": "Male", "silicon": true }, { "id": "walksanator", "name": "Walksanator", "sex": "Male", "silicon": false }, { "id": "walmartoog", "name": "Walmart Oog", "sex": "Male", "silicon": false }, { "id": "ICASSP50", "name": "Walter", "sex": "Male", "silicon": false }, { "id": "wardbot", "name": "WardBot", "sex": "Male", "silicon": true }, { "id": "ICASSP92", "name": "Warren", "sex": "Female", "silicon": false }, { "id": "ICASSP119", "name": "Wayne", "sex": "Male", "silicon": false }, { "id": "weakgood", "name": "Weakgood", "sex": "Male", "silicon": false }, { "id": "mozillaAu5", "name": "Wesley", "sex": "Male", "silicon": false }, { "id": "western1", "name": "Western1", "sex": "Male", "silicon": false }, { "id": "western2", "name": "Western2", "sex": "Male", "silicon": false }, { "id": "wheezy", "name": "Wheezy", "sex": "Male", "silicon": false }, { "id": "mozillaAu28", "name": "Wilhelmina", "sex": "Female", "silicon": false }, { "id": "ICASSP178", "name": "Winifred", "sex": "Female", "silicon": false }, { "id": "ICASSP167", "name": "Winslow", "sex": "Male", "silicon": false }, { "id": "ICASSP136", "name": "Winston", "sex": "Male", "silicon": false }, { "id": "xiene", "name": "Xiene", "sex": "Female", "silicon": false }, { "id": "xoan", "name": "Xoan", "sex": "Male", "silicon": false }, { "id": "borgXoan", "name": "Xoan", "sex": "Male", "silicon": true }, { "id": "ICASSP43", "name": "Zara", "sex": "Female", "silicon": false }, { "id": "zorp", "name": "Zorp", "sex": "Male", "silicon": false }, { "id": "zorpina", "name": "Zorpina", "sex": "Female", "silicon": false }];
+
+    const ACTIVE_VOICES = VOICES.filter(v => !v.silicon);
 
     // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -313,20 +339,22 @@
           const res = await fetch(APPS_SCRIPT_URL + "?action=getClassified");
           const data = await res.json();
           classifiedCounts = data.counts || {};
+          setStatus(""); // Clear loading text on success
         } catch (e) {
-          setStatus("Could not reach backend — showing all voices randomly.");
+          setStatus("Could not reach backend, showing all voices randomly.");
         }
       } else {
-        setStatus("⚠ No backend configured (APPS_SCRIPT_URL is empty). Running in demo mode — submissions won't be saved.");
+        setStatus("⚠ No backend configured (APPS_SCRIPT_URL is empty). Running in demo mode, submissions won't be saved.");
       }
 
       buildQueue();
+      updateStats();
       showNext();
     }
 
     function buildQueue() {
-      // Map counts to all voices
-      const voiceWithCounts = VOICES.map(v => ({
+      // Map counts to all non-silicon voices
+      const voiceWithCounts = ACTIVE_VOICES.map(v => ({
         voice: v,
         count: classifiedCounts[v.id] || 0
       }));
@@ -353,28 +381,26 @@
         queue = queue.concat(group);
       });
 
-      // Total submissions
-      const totalSubmissions = Object.values(classifiedCounts).reduce((a, b) => a + b, 0);
-
-      document.getElementById("statusBar").textContent =
-        `Submissions: ${totalSubmissions} | Next voice count: ${classifiedCounts[queue[0]?.id] || 0} classification(s)`;
     }
 
     function showNext() {
       if (queue.length === 0) {
         document.getElementById("voiceCard").style.display = "none";
         document.getElementById("formArea").style.display = "none";
-        setStatus("All voices have been classified — thank you!");
+        setStatus("All voices have been classified, thank you!");
         return;
       }
 
       currentVoice = queue.shift();
+
+      const currentCount = classifiedCounts[currentVoice.id] || 0;
 
       // Voice card
       document.getElementById("voiceName").textContent = currentVoice.name;
       const parts = [currentVoice.sex];
       if (currentVoice.silicon) parts.push("Silicon");
       parts.push(currentVoice.id);
+      parts.push(`${currentCount} classification${currentCount === 1 ? "" : "s"}`);
       document.getElementById("voiceMeta").textContent = parts.join(" · ");
       document.getElementById("voiceCard").style.display = "";
       document.getElementById("formArea").style.display = "";
@@ -629,7 +655,7 @@
             setSubmitStatus("⚠ Network error on submission.");
           });
         } catch (e) {
-          setSubmitStatus("Network error — moving on anyway.");
+          setSubmitStatus("Network error, moving on anyway.");
         }
       }
 
@@ -657,16 +683,28 @@
     }
 
     function updateSessionLog() {
-      document.getElementById("sessionCount").textContent = sessionLog.length;
+      updateStats();
       const ul = document.getElementById("sessionLog");
       ul.innerHTML = "";
       sessionLog.slice(0, 15).forEach(s => {
         const li = document.createElement("li");
         const tagStr = s.tags.length ? s.tags.join(", ") : "no tags";
         const pitchStr = s.pitch || "no pitch";
-        li.textContent = `${s.name} — ${pitchStr} — ${tagStr}`;
+        li.textContent = `${s.name} | ${pitchStr} | ${tagStr}`;
         ul.appendChild(li);
       });
+    }
+
+    function updateStats() {
+      document.getElementById("sessionCount").textContent = sessionLog.length;
+
+      const totalSubmissions = Object.values(classifiedCounts).reduce((a, b) => a + b, 0);
+      document.getElementById("communityCount").textContent = totalSubmissions;
+
+      const activeIds = ACTIVE_VOICES.map(v => v.id);
+      const uniqueClassified = Object.keys(classifiedCounts).filter(id => activeIds.includes(id) && (classifiedCounts[id] || 0) > 0).length;
+      const coveragePct = ((uniqueClassified / ACTIVE_VOICES.length) * 100).toFixed(1);
+      document.getElementById("coveragePct").textContent = `${coveragePct}%`;
     }
 
     // ── Keyboard shortcuts ────────────────────────────────────────────────────────
@@ -697,10 +735,6 @@
         document.getElementById("pitchSelect").value = "";
       }
 
-      // Skip hotkey
-      if (e.key.toLowerCase() === "s") {
-        skipVoice();
-      }
 
 
 
@@ -751,26 +785,40 @@ function doPost(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
 
-    // Basic validation — drop garbage
-    const validPitch = ["Low", "Medium", "High", ""];
-    if (!payload.voice_id) return ContentService.createTextOutput("bad");
-    if (!validPitch.includes(payload.pitch || "")) return ContentService.createTextOutput("bad");
+    const voiceId = String(payload.voice_id || "").trim();
+    const pitch = String(payload.pitch || "").trim();
+    const tags = String(payload.tags || "").trim();
+    const sessionId = String(payload.session_id || "").trim();
 
+    // 1. Strict Format Validation
+    const validPitch = ["Low", "Medium", "High", ""];
+    if (!validPitch.includes(pitch)) return ContentService.createTextOutput("bad");
+
+    // Enforce clean alphanumeric format for voice_id (e.g. "ICASSP166" or "angryJowels")
+    if (!/^[a-zA-Z0-9]+$/.test(voiceId)) return ContentService.createTextOutput("bad");
+
+    // Enforce UUID format for session_id (e.g. "7a406a61-b04a-0c85-1542-7331e657fd")
+    if (sessionId && !/^[0-9a-fA-F\-]+$/.test(sessionId)) return ContentService.createTextOutput("bad");
+
+    // Enforce comma-separated lowercase tags with hyphens (e.g. "raspy,clear-british")
+    if (tags && !/^[a-z0-9\-,]+$/.test(tags)) return ContentService.createTextOutput("bad");
+
+    // 2. Formula Injection Prevention (Prepend single quote to treat values as literal strings)
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
     sheet.appendRow([
-      payload.session_id   || "",
-      payload.voice_id     || "",
-      payload.pitch        || "",
-      payload.tags         || "",
-      payload.submitted_at || new Date().toISOString(),
+      "'" + sessionId,
+      "'" + voiceId,
+      "'" + pitch,
+      "'" + tags,
+      new Date().toISOString()
     ]);
   } catch(err) {
-    // Swallow — don't expose internals
+    // Swallow errors silently
   }
   return ContentService.createTextOutput("ok");
 }
 
-// Sheet setup helper — run once manually from the Apps Script editor:
+// Setup helper: Run this once manually
 function setupSheet() {
   const ss    = SpreadsheetApp.getActiveSpreadsheet();
   let sheet   = ss.getSheetByName(SHEET_NAME);
